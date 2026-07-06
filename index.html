@@ -676,6 +676,9 @@ var BG_GIF_LOOP_MS = 3800;
 })();
 
 // ── GitHub Pages fetch shim ───────────────────────────────────────────────────
+// Polyfills google.script.run with fetch() calls to the GAS JSON endpoints.
+// Requires doGet() to have a try/catch so errors return JSON (not HTML),
+// because HTML error pages from GAS don't include CORS headers.
 (function() {
   if (typeof google !== 'undefined' && google.script && google.script.run) return;
   var MAP = {
@@ -685,7 +688,6 @@ var BG_GIF_LOOP_MS = 3800;
     obWAGetScheduleForClient:  'schedule',
     obWAGetCyclesForClient:    'cycles'
   };
-  // champions reuses cycles endpoint — no extra entry needed
   function makeRunner_(ok, fail) {
     var r = {
       withSuccessHandler: function(fn) { return makeRunner_(fn, fail); },
