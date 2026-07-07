@@ -341,7 +341,7 @@ thead th {
   letter-spacing: .05em; padding: 8px 10px; border-bottom: 1px solid var(--border);
   white-space: nowrap; text-shadow: 0 0 6px var(--gold-glow);
 }
-.tbl-wrap thead th { position: sticky; top: 0; z-index: 2; background: transparent; }
+.tbl-wrap thead th { position: sticky; top: 0; z-index: 2; background: rgba(3, 6, 15, 0.92); }
 tbody tr { border-bottom: 1px solid rgba(30,50,80,.6); transition: background .12s; }
 tbody tr:hover { background: rgba(40,80,150,.25); }
 tbody td { padding: 8px 10px; color: var(--text-sec); font-size: .95rem; }
@@ -675,13 +675,11 @@ var BG_GIF_LOOP_MS = 3800;
   }, BG_GIF_LOOP_MS);
 })();
 
-// ── GitHub Pages fetch shim ───────────────────────────────────────────────────
+// ── GitHub Pages shim ─────────────────────────────────────────────────────────
 // Polyfills google.script.run with fetch() calls to the GAS JSON endpoints.
-// Requires doGet() to have a try/catch so errors return JSON (not HTML),
-// because HTML error pages from GAS don't include CORS headers.
 (function() {
   if (typeof google !== 'undefined' && google.script && google.script.run) return;
-  var MAP = {
+  var GAS_MAP = {
     obWAGetStandingsForClient: 'standings',
     obWAGetWeeklyForClient:    'weekly',
     obWAGetPlayersForClient:   'players',
@@ -693,9 +691,9 @@ var BG_GIF_LOOP_MS = 3800;
       withSuccessHandler: function(fn) { return makeRunner_(fn, fail); },
       withFailureHandler: function(fn) { return makeRunner_(ok, fn); }
     };
-    Object.keys(MAP).forEach(function(m) {
-      r[m] = function() {
-        fetch(WEBAPP_URL + '?get=' + MAP[m])
+    Object.keys(GAS_MAP).forEach(function(method) {
+      r[method] = function() {
+        fetch(WEBAPP_URL + '?get=' + GAS_MAP[method])
           .then(function(res) { return res.json(); })
           .then(function(j)   { if (ok)   ok(j); })
           .catch(function(e)  { if (fail) fail(e); });
@@ -1209,26 +1207,7 @@ function renderChampions(data) {
       '</div>' +
     '</div>';
 
-  // Cycle cards below the plaque
-  var cardsHtml = '<div class="cycle-cards">' + cycles.slice().reverse().map(function(cyc) {
-    var champHtml = cyc.active
-      ? '<div class="cy-champ"><div class="cy-champ-lbl">Status</div><div class="cy-champ-name"><span class="active-pill">IN PROGRESS</span></div></div>'
-      : '<div class="cy-champ"><div class="cy-champ-lbl">Champion</div><div class="cy-champ-name">👑 ' + avHtml(cyc.champion, 22) + (cyc.champion || '—') + '</div></div>';
-    var top5 = (cyc.standings || cyc.top5 || []).map(function(t, i) {
-      return '<div class="cy-row"><div class="cy-row-rank">' + (i + 1) + '</div>' +
-        '<div class="cy-row-team">' + avHtml(t.team, 18) + t.team + '</div>' +
-        '<div class="cy-row-pts">' + fmtN(t.total) + '</div></div>';
-    }).join('');
-    return '<div class="cy-card' + (cyc.active ? ' active-cy' : '') + '">' +
-      '<div class="cy-hdr"><div class="cy-name">' + cyc.name + (cyc.active ? ' <span class="active-pill">CURRENT</span>' : '') + '</div>' +
-      '<div class="cy-dates">' + cyc.label + ' &nbsp;(' + cyc.start + ' – ' + cyc.end + ')</div></div>' +
-      champHtml +
-      '<div class="cy-standings">' + (top5 || '<div class="empty" style="padding:10px">No data yet</div>') + '</div>' +
-      '</div>';
-  }).join('') + '</div>';
-
-  el.innerHTML = plaqueHtml +
-    '<div class="card"><div class="section-title">Cycle Champions Hall of Fame</div>' + cardsHtml + '</div>';
+  el.innerHTML = plaqueHtml;
 }
 
 // ── Sync scrollbar ─────────────────────────────────────────────────────────────
@@ -1248,7 +1227,7 @@ google.script.run
   .withSuccessHandler(function(d) { STATE.standings = d; renderStandings(d); })
   .withFailureHandler(function(e) {
     document.getElementById('standings-content').innerHTML =
-      '<div class="empty">Failed to load standings.</div>';
+      '<div class="empty">Failed to load. ' + (e && e.message ? e.message : String(e)) + '</div>';
   })
   .obWAGetStandingsForClient();
 </script>
