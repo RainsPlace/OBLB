@@ -570,6 +570,18 @@ th.sortable.desc::after { content: ' ▼'; color: var(--gold); }
 #tab-champions .pod-pts { font-size: 1.1rem; }
 #tab-champions .pod-meta { font-size: .72rem; }
 
+/* ── TEAMS TAB ── */
+.teams-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:20px; padding:6px 0 40px; }
+.team-card { background:rgba(2,5,18,.6); border:2px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .18s,box-shadow .18s; text-align:center; }
+.team-card:hover { border-color:var(--border-lit); box-shadow:0 0 18px rgba(210,50,50,.18); }
+.team-card-avatar { width:100%; aspect-ratio:1; overflow:hidden; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; }
+.team-card-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+.team-card-avatar .team-card-init { font-size:3rem; font-weight:900; color:#fff; }
+.team-card-name { font-size:.95rem; font-weight:800; color:var(--gold); letter-spacing:.04em; padding:10px 12px 6px; text-shadow:0 0 8px var(--gold-glow); }
+.team-card-members { list-style:none; padding:0 12px 14px; margin:0; }
+.team-card-members li { font-size:.82rem; color:var(--text-sec); padding:3px 0; border-top:1px solid rgba(255,255,255,.05); }
+.team-card-members li:first-child { border-top:none; }
+
 /* ── LEAGUE INFO TAB ── */
 .li-wrap { padding:20px 0 48px; }
 .li-intro { font-size:.95rem; color:var(--text-dim); line-height:1.7; margin-bottom:24px; text-align:center; font-style:italic; }
@@ -625,6 +637,8 @@ th.sortable.desc::after { content: ' ▼'; color: var(--gold); }
       <div class="nav-item"          id="nav-cycles"      onclick="openTab('cycles')"    ><span class="nav-icon">🔄</span>Cycles</div>
       <div class="nav-item"          id="nav-champions"   onclick="openTab('champions')" ><span class="nav-icon">👑</span>Champions</div>
       <div class="nav-item"          id="nav-leagueinfo"  onclick="openTab('leagueinfo')"><span class="nav-icon">🗺</span>Leagues Info</div>
+      <div class="nav-item"          id="nav-teams"       onclick="openTab('teams')"     ><span class="nav-icon">🛡</span>Teams</div>
+      <a class="nav-item" href="https://script.google.com/macros/s/AKfycbwUHbg75pPTY1-kvNNd8DxRh_CyZCkDNTjrmzcrw8oKA3o3Yw2gOKoNImtazZVchmzD/exec" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;"><span class="nav-icon">⚓</span>Captain's Hub</a>
     </nav>
     <div class="sidebar-bottom">
       <div class="theme-toggle" onclick="toggleGif()" title="Toggle background GIF on/off">
@@ -678,6 +692,11 @@ th.sortable.desc::after { content: ' ▼'; color: var(--gold); }
       <!-- CHAMPIONS -->
       <div id="tab-champions" class="tab-panel">
         <div id="champions-content"><div class="loading">Loading champions…</div></div>
+      </div>
+
+      <!-- TEAMS -->
+      <div id="tab-teams" class="tab-panel">
+        <div id="teams-content"><div class="loading">Loading teams…</div></div>
       </div>
 
       <!-- LEAGUE INFO -->
@@ -910,7 +929,8 @@ var BG_GIF_LOOP_MS = 3800;
     obWAGetWeeklyForClient:    'weekly',
     obWAGetPlayersForClient:   'players',
     obWAGetScheduleForClient:  'schedule',
-    obWAGetCyclesForClient:    'cycles'
+    obWAGetCyclesForClient:    'cycles',
+    obWAGetTeamsForClient:     'teams'
   };
   function makeRunner_(ok, fail) {
     var r = {
@@ -945,12 +965,13 @@ var TEAM_AVATARS = {
   'The Strangler Figs': "https://raw.githubusercontent.com/RainsPlace/Avatars/main/Orion's%20Belt/Strangler_figs.png",
   'Galactica':          "https://github.com/RainsPlace/Avatars/blob/main/Orion's%20Belt/Galactica11.png?raw=true",
   'Nexus':              "https://raw.githubusercontent.com/RainsPlace/Avatars/main/Orion's%20Belt/Nexus.png",
-  'Southern Cross':     "https://raw.githubusercontent.com/RainsPlace/Avatars/main/Orion's%20Belt/SC.jpg"
+  'Southern Cross':     "https://raw.githubusercontent.com/RainsPlace/Avatars/main/Orion's%20Belt/SC.jpg",
+  'Outlanders':         "https://raw.githubusercontent.com/RainsPlace/Avatars/main/Orion's%20Belt/Outlanders.jpg"
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var STATE = {
-  standings: null, weekly: null, players: null, schedule: null, cycles: null,
+  standings: null, weekly: null, players: null, schedule: null, cycles: null, teams: null,
   loaded: {}, playerSort: { col: 'points', asc: false },
   calFilter: 'upcoming', playerCycle: 'all'
 };
@@ -1003,7 +1024,8 @@ function loadTab(tab) {
     calendar:   'obWAGetScheduleForClient',
     players:    'obWAGetPlayersForClient',
     cycles:     'obWAGetCyclesForClient',
-    champions:  'obWAGetCyclesForClient'
+    champions:  'obWAGetCyclesForClient',
+    teams:      'obWAGetTeamsForClient'
   }[tab];
   if (!gasMethod) return; // static tabs (e.g. leagueinfo) need no data fetch
   var stateKey = tab === 'calendar' ? 'schedule' : tab === 'champions' ? 'cycles' : tab;
@@ -1025,6 +1047,7 @@ function renderTab(tab, d) {
   else if (tab === 'players')    renderPlayers(d);
   else if (tab === 'cycles')     renderCycles(d);
   else if (tab === 'champions')  renderChampions(d);
+  else if (tab === 'teams')      renderTeams(d);
 }
 
 // ── Team colors ───────────────────────────────────────────────────────────────
@@ -1435,6 +1458,37 @@ function renderChampions(data) {
     '</div>';
 
   el.innerHTML = plaqueHtml;
+}
+
+// ── TEAMS ─────────────────────────────────────────────────────────────────────
+function renderTeams(data) {
+  var el = document.getElementById('teams-content');
+  if (!data || data.error) { el.innerHTML = '<div class="empty">' + (data && data.error ? data.error : 'No data') + '</div>'; return; }
+  if (!data.teams || !data.teams.length) { el.innerHTML = '<div class="empty">No teams found.</div>'; return; }
+
+  var html =
+    '<div style="margin-bottom:18px;">' +
+      '<h2 style="margin:0 0 4px;font-size:1.4rem;font-weight:900;color:var(--gold);letter-spacing:.05em;text-shadow:0 0 12px var(--gold-glow);">Current Orion\'s Belt Teams</h2>' +
+      '<p style="margin:0;font-size:.82rem;color:var(--text-dim);font-style:italic;">Player names are links to profiles</p>' +
+    '</div>' +
+    '<div class="teams-grid">';
+  data.teams.forEach(function(t) {
+    var url = TEAM_AVATARS[t.name];
+    var avInner = url
+      ? '<img src="' + url + '" alt="' + t.name + '" loading="lazy">'
+      : '<div class="team-card-init">' + tInit(t.name) + '</div>';
+    var membersHtml = t.members.length
+      ? t.members.map(function(m) { return '<li><a href="https://www.casino.org/replaypoker/profile/' + encodeURIComponent(m) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" onmouseover="this.style.color=\'var(--gold)\'" onmouseout="this.style.color=\'inherit\'">' + m + '</a></li>'; }).join('')
+      : '<li style="color:var(--text-muted)">—</li>';
+    html +=
+      '<div class="team-card">' +
+        '<div class="team-card-avatar" style="border-bottom:2px solid ' + tColor(t.name) + '">' + avInner + '</div>' +
+        '<div class="team-card-name">' + t.name + '</div>' +
+        '<ul class="team-card-members">' + membersHtml + '</ul>' +
+      '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 // ── Sync scrollbar ─────────────────────────────────────────────────────────────
