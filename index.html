@@ -1511,6 +1511,17 @@ google.script.run
       '<div class="empty">Failed to load. ' + (e && e.message ? e.message : String(e)) + '</div>';
   })
   .obWAGetStandingsForClient();
+
+(function(){
+  fetch(WEBAPP_URL + '?get=pageview')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var el = document.getElementById('obPvCount');
+      if (el && d && d.count) el.textContent = Number(d.count).toLocaleString();
+    })
+    .catch(function(){});
+})();
 </script>
+<div id="ob-page-footer" style="text-align:center;padding:8px 0 12px;font-size:11px;color:#f0c040;opacity:0.8">👁 PAGE VIEWS: <span id="obPvCount">—</span></div>
 </body>
 </html>
